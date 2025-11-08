@@ -7,16 +7,24 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import com.emenjivar.threedimensionalprojections.math.multiply
 import com.emenjivar.threedimensionalprojections.math.projectionMatrix
 import com.emenjivar.threedimensionalprojections.math.xRotationMatrix
@@ -71,70 +79,94 @@ class MainActivity : ComponentActivity() {
 
                 var _xRotation by remember { mutableFloatStateOf(0f) }
                 var _yRotation by remember { mutableFloatStateOf(0f) }
+                var zDistanceSlider by remember { mutableFloatStateOf(0.5f) }
+                val zDistance = lerp(
+                    start = 0f,
+                    stop = 2.5f,
+                    fraction = zDistanceSlider
+                )
 
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            detectDragGestures { change, dragAmount ->
-                                change.consume()
-                                val slowFactor = 0.5f
-                                // TODO: switch the values
-                                _yRotation += -(dragAmount.x * slowFactor % 360f)
-                                _xRotation += dragAmount.y * slowFactor % 360f
+                Box {
+                    Canvas(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(Unit) {
+                                detectDragGestures { change, dragAmount ->
+                                    change.consume()
+                                    val slowFactor = 0.5f
+                                    // TODO: switch the values
+                                    _yRotation += -(dragAmount.x * slowFactor % 360f)
+                                    _xRotation += dragAmount.y * slowFactor % 360f
 
-                                Log.wtf(
-                                    "MainActivity",
-                                    "drag (x: ${dragAmount.x}, y: ${dragAmount.y}), rotation: ($_yRotation,$_xRotation) "
-                                )
+                                    Log.wtf(
+                                        "MainActivity",
+                                        "drag (x: ${dragAmount.x}, y: ${dragAmount.y}), rotation: ($_yRotation,$_xRotation) "
+                                    )
+                                }
                             }
+                    ) {
+
+
+                        edges.forEach { edge ->
+                            val start = cubeVertexes[edge.first]
+                            val end = cubeVertexes[edge.second]
+
+                            val startCoordinates = project3DCoordinate(
+                                x = start.x,
+                                y = start.y,
+                                z = start.z,
+                                alpha = _xRotation, // y-rotation
+                                beta = _yRotation, // x-rotation
+                                gamma = 0f, // z-rotation,
+                                zDistance = zDistance
+                            )
+
+                            val endCoordinates = project3DCoordinate(
+                                x = end.x,
+                                y = end.y,
+                                z = end.z,
+                                alpha = _xRotation, // y-rotation
+                                beta = _yRotation, // x-rotation
+                                gamma = 0f, // z-rotation
+                                zDistance = zDistance
+                            )
+
+                            val startOffset = Offset(
+                                x = normalizeWidth(startCoordinates.x),
+                                y = normalizeHeight(startCoordinates.y)
+                            )
+                            val endOffset = Offset(
+                                x = normalizeWidth(endCoordinates.x),
+                                y = normalizeHeight(endCoordinates.y)
+                            )
+
+                            // Draw vertex in pairs (most efficient)
+                            drawCircle(
+                                color = Color.Red,
+                                radius = 10f,
+                                center = startOffset
+                            )
+                            drawCircle(
+                                color = Color.Red,
+                                radius = 10f,
+                                center = endOffset
+                            )
+
+                            // Draw vertex
+                            drawLine(color = Color.Black, start = startOffset, end = endOffset)
                         }
-                ) {
-                    edges.forEach { edge ->
-                        val start = cubeVertexes[edge.first]
-                        val end = cubeVertexes[edge.second]
+                    }
 
-                        val startCoordinates = project3DCoordinate(
-                            x = start.x,
-                            y = start.y,
-                            z = start.z,
-                            alpha = _xRotation, // y-rotation
-                            beta = _yRotation, // x-rotation
-                            gamma = 0f // z-rotation
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(20.dp),
+                    ) {
+                        Text(text = "Camera distance ($zDistance):")
+                        Slider(
+                            value = zDistanceSlider,
+                            onValueChange = { zDistanceSlider = it }
                         )
-
-                        val endCoordinates = project3DCoordinate(
-                            x = end.x,
-                            y = end.y,
-                            z = end.z,
-                            alpha = _xRotation, // y-rotation
-                            beta = _yRotation, // x-rotation
-                            gamma = 0f // z-rotation
-                        )
-
-                        val startOffset = Offset(
-                            x = normalizeWidth(startCoordinates.x),
-                            y = normalizeHeight(startCoordinates.y)
-                        )
-                        val endOffset = Offset(
-                            x = normalizeWidth(endCoordinates.x),
-                            y = normalizeHeight(endCoordinates.y)
-                        )
-
-                        // Draw vertex in pairs (most efficient)
-                        drawCircle(
-                            color = Color.Red,
-                            radius = 10f,
-                            center = startOffset
-                        )
-                        drawCircle(
-                            color = Color.Red,
-                            radius = 10f,
-                            center = endOffset
-                        )
-
-                        // Draw vertex
-                        drawLine(color = Color.Black, start = startOffset, end = endOffset)
                     }
                 }
             }
@@ -156,7 +188,8 @@ fun project3DCoordinate(
     z: Float,
     alpha: Float,
     beta: Float,
-    gamma: Float
+    gamma: Float,
+    zDistance: Float
 ): Coordinate {
     val alphaRad = Math.toRadians(alpha.toDouble()).toFloat()
     val betaRad = Math.toRadians(beta.toDouble()).toFloat()
@@ -174,8 +207,7 @@ fun project3DCoordinate(
     val zRotated = zRotationMatrix(gammaRad) multiply yRotated
 
     // Apply perspective projection
-    val distance = 2.5f // Distance from camera
-    val w = 1f / (distance - zRotated[2][0]) // perpective divide factor
+    val w = 1f / (zDistance - zRotated[2][0]) // perpective divide factor
 
     val projected = projectionMatrix multiply zRotated
 
