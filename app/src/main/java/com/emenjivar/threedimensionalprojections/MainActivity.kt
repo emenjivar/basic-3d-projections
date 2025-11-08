@@ -104,7 +104,6 @@ class MainActivity : ComponentActivity() {
                             .pointerInput(Unit) {
                                 detectDragGestures { change, dragAmount ->
                                     change.consume()
-                                    Log.wtf("MainActivity", "drag: $dragAmount, scroll delta: ${change.scrollDelta}")
                                     val slowFactor = 0.5f
                                     // TODO: switch the values
                                     _yRotation += dragAmount.x * slowFactor % 360f
@@ -112,31 +111,36 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                     ) {
-
-
-                        edges.forEach { edge ->
-                            val start = cubeVertexes[edge.first]
-                            val end = cubeVertexes[edge.second]
-
-                            val startCoordinates = project3DCoordinate(
-                                x = start.x,
-                                y = start.y,
-                                z = start.z,
+                        val projectedCoordinates = cubeVertexes.map { vertex ->
+                            project3DCoordinate(
+                                x = vertex.x,
+                                y = vertex.y,
+                                z = vertex.z,
                                 alpha = _xRotation, // y-rotation
                                 beta = _yRotation, // x-rotation
                                 gamma = 0f, // z-rotation,
                                 zDistance = zDistance
                             )
+                        }
 
-                            val endCoordinates = project3DCoordinate(
-                                x = end.x,
-                                y = end.y,
-                                z = end.z,
-                                alpha = _xRotation, // y-rotation
-                                beta = _yRotation, // x-rotation
-                                gamma = 0f, // z-rotation
-                                zDistance = zDistance
+                        val zRotatedCoordinates = cubeVertexes.map { vertex ->
+                            val alphaRad = Math.toRadians(_xRotation.toDouble()).toFloat()
+                            val betaRad = Math.toRadians(_yRotation.toDouble()).toFloat()
+
+                            val original = arrayOf(
+                                floatArrayOf(vertex.x),
+                                floatArrayOf(vertex.y),
+                                floatArrayOf(vertex.z)
                             )
+
+                            val xRotation = xRotationMatrix(alphaRad) multiply original
+                            val yRotation = yRotationMatrix(betaRad) multiply xRotation
+                            yRotation[2][0] // z-coordinate
+                        }
+
+                        edges.forEach { edge ->
+                            val startCoordinates = projectedCoordinates[edge.first]
+                            val endCoordinates = projectedCoordinates[edge.second]
 
                             val startOffset = Offset(
                                 x = normalizeWidth(startCoordinates.x),
@@ -165,70 +169,33 @@ class MainActivity : ComponentActivity() {
 
                         // Draw faces (z-index is not considered for now)
                         faces.map { face ->
-                            var groupZ = 0f
-                            val a = cubeVertexes[face.a].let {
-                                project3DCoordinate(
-                                    x = it.x,
-                                    y = it.y,
-                                    z = it.z,
-                                    alpha = _xRotation,
-                                    beta = _yRotation,
-                                    gamma = 0f,
-                                    zDistance = zDistance
+                            val averageZ = listOf(
+                                zRotatedCoordinates[face.a],
+                                zRotatedCoordinates[face.b],
+                                zRotatedCoordinates[face.c],
+                                zRotatedCoordinates[face.d]
+                            ).average()
+
+                            averageZ to face
+                        }.sortedBy { it.first }
+                            .forEach { (_, face) ->
+                                val a = projectedCoordinates[face.a]
+                                val b = projectedCoordinates[face.b]
+                                val c = projectedCoordinates[face.c]
+                                val d = projectedCoordinates[face.d]
+
+                                drawPath(
+                                    color = face.color,
+                                    alpha = 1f,
+                                    path = Path().apply {
+                                        moveTo(normalizeWidth(a.x), normalizeHeight(a.y))
+                                        lineTo(normalizeWidth(b.x), normalizeHeight(b.y))
+                                        lineTo(normalizeWidth(c.x), normalizeHeight(c.y))
+                                        lineTo(normalizeWidth(d.x), normalizeHeight(d.y))
+                                        close() // Connect back to start and fills
+                                    }
                                 )
                             }
-
-                            val b = cubeVertexes[face.b].let {
-                                project3DCoordinate(
-                                    x = it.x,
-                                    y = it.y,
-                                    z = it.z,
-                                    alpha = _xRotation,
-                                    beta = _yRotation,
-                                    gamma = 0f,
-                                    zDistance = zDistance
-                                )
-                            }
-
-                            val c = cubeVertexes[face.c].let {
-                                project3DCoordinate(
-                                    x = it.x,
-                                    y = it.y,
-                                    z = it.z,
-                                    alpha = _xRotation,
-                                    beta = _yRotation,
-                                    gamma = 0f,
-                                    zDistance = zDistance
-                                )
-                            }
-
-                            val d = cubeVertexes[face.d].let {
-                                project3DCoordinate(
-                                    x = it.x,
-                                    y = it.y,
-                                    z = it.z,
-                                    alpha = _xRotation,
-                                    beta = _yRotation,
-                                    gamma = 0f,
-                                    zDistance = zDistance
-                                )
-                            }
-
-                            // groupZ = a.z + b.z + c.z + d.z
-
-                            drawPath(
-                                color = face.color,
-                                alpha = 0.3f,
-                                path = Path().apply {
-                                    moveTo(normalizeWidth(a.x), normalizeHeight(a.y))
-                                    lineTo(normalizeWidth(b.x), normalizeHeight(b.y))
-                                    lineTo(normalizeWidth(c.x), normalizeHeight(c.y))
-                                    lineTo(normalizeWidth(d.x), normalizeHeight(d.y))
-                                    close() // Connect back to start and fills
-                                }
-                            )
-                            // groupZ to listOf(a, b, c, d)
-                        }
                     }
 
                     Column(
