@@ -1,5 +1,6 @@
 package com.emenjivar.threedimensionalprojections
 
+import android.R
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -21,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
@@ -31,8 +33,6 @@ import com.emenjivar.threedimensionalprojections.math.xRotationMatrix
 import com.emenjivar.threedimensionalprojections.math.yRotationMatrix
 import com.emenjivar.threedimensionalprojections.math.zRotationMatrix
 import com.emenjivar.threedimensionalprojections.ui.theme.ThreeDimensionalProjectionsTheme
-
-private const val ANIMATION_TIME = 5000
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +54,17 @@ class MainActivity : ComponentActivity() {
                         Coordinate3D(x = -0.5f, y = 0.5f, z = -0.5f), // bottom-left
                         Coordinate3D(x = 0.5f, y = -0.5f, z = -0.5f), // top-right
                         Coordinate3D(x = 0.5f, y = 0.5f, z = -0.5f), // bottom-right
+                    )
+                }
+
+                val faces = remember {
+                    listOf(
+                        CubeFace(0, 2, 3, 1), // front
+                        CubeFace(0, 2, 6, 4), // top
+                        CubeFace(1, 3, 7, 5), // bottom
+                        CubeFace(4, 6, 7, 5), // back
+//                        CubeFace(0, 4, 5, 1), // Left
+//                        CubeFace(2, 6, 7, 3) // right
                     )
                 }
 
@@ -81,8 +92,8 @@ class MainActivity : ComponentActivity() {
                 var _yRotation by remember { mutableFloatStateOf(0f) }
                 var zDistanceSlider by remember { mutableFloatStateOf(0.5f) }
                 val zDistance = lerp(
-                    start = 0f,
-                    stop = 2.5f,
+                    start = 1f,
+                    stop = 5f,
                     fraction = zDistanceSlider
                 )
 
@@ -93,15 +104,11 @@ class MainActivity : ComponentActivity() {
                             .pointerInput(Unit) {
                                 detectDragGestures { change, dragAmount ->
                                     change.consume()
+                                    Log.wtf("MainActivity", "drag: $dragAmount, scroll delta: ${change.scrollDelta}")
                                     val slowFactor = 0.5f
                                     // TODO: switch the values
-                                    _yRotation += -(dragAmount.x * slowFactor % 360f)
+                                    _yRotation += dragAmount.x * slowFactor % 360f
                                     _xRotation += dragAmount.y * slowFactor % 360f
-
-                                    Log.wtf(
-                                        "MainActivity",
-                                        "drag (x: ${dragAmount.x}, y: ${dragAmount.y}), rotation: ($_yRotation,$_xRotation) "
-                                    )
                                 }
                             }
                     ) {
@@ -155,6 +162,73 @@ class MainActivity : ComponentActivity() {
                             // Draw vertex
                             drawLine(color = Color.Black, start = startOffset, end = endOffset)
                         }
+
+                        // Draw faces (z-index is not considered for now)
+                        faces.map { face ->
+                            var groupZ = 0f
+                            val a = cubeVertexes[face.a].let {
+                                project3DCoordinate(
+                                    x = it.x,
+                                    y = it.y,
+                                    z = it.z,
+                                    alpha = _xRotation,
+                                    beta = _yRotation,
+                                    gamma = 0f,
+                                    zDistance = zDistance
+                                )
+                            }
+
+                            val b = cubeVertexes[face.b].let {
+                                project3DCoordinate(
+                                    x = it.x,
+                                    y = it.y,
+                                    z = it.z,
+                                    alpha = _xRotation,
+                                    beta = _yRotation,
+                                    gamma = 0f,
+                                    zDistance = zDistance
+                                )
+                            }
+
+                            val c = cubeVertexes[face.c].let {
+                                project3DCoordinate(
+                                    x = it.x,
+                                    y = it.y,
+                                    z = it.z,
+                                    alpha = _xRotation,
+                                    beta = _yRotation,
+                                    gamma = 0f,
+                                    zDistance = zDistance
+                                )
+                            }
+
+                            val d = cubeVertexes[face.d].let {
+                                project3DCoordinate(
+                                    x = it.x,
+                                    y = it.y,
+                                    z = it.z,
+                                    alpha = _xRotation,
+                                    beta = _yRotation,
+                                    gamma = 0f,
+                                    zDistance = zDistance
+                                )
+                            }
+
+                            // groupZ = a.z + b.z + c.z + d.z
+
+                            drawPath(
+                                color = Color.Green,
+                                alpha = 0.3f,
+                                path = Path().apply {
+                                    moveTo(normalizeWidth(a.x), normalizeHeight(a.y))
+                                    lineTo(normalizeWidth(b.x), normalizeHeight(b.y))
+                                    lineTo(normalizeWidth(c.x), normalizeHeight(c.y))
+                                    lineTo(normalizeWidth(d.x), normalizeHeight(d.y))
+                                    close() // Connect back to start and fills
+                                }
+                            )
+                            // groupZ to listOf(a, b, c, d)
+                        }
                     }
 
                     Column(
@@ -176,6 +250,7 @@ class MainActivity : ComponentActivity() {
 
 data class Coordinate(val x: Float, val y: Float)
 data class Coordinate3D(val x: Float, val y: Float, val z: Float)
+data class CubeFace(val a: Int, val b: Int, val c: Int, val d: Int)
 
 /**
  * @param alpha Angle in degrees.
