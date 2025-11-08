@@ -59,12 +59,12 @@ class MainActivity : ComponentActivity() {
 
                 val faces = remember {
                     listOf(
-                        CubeFace(0, 2, 3, 1), // front
-                        CubeFace(0, 2, 6, 4), // top
-                        CubeFace(1, 3, 7, 5), // bottom
-                        CubeFace(4, 6, 7, 5), // back
-//                        CubeFace(0, 4, 5, 1), // Left
-//                        CubeFace(2, 6, 7, 3) // right
+                        CubeFace(0, 2, 3, 1, Color.Blue), // front
+                        CubeFace(0, 2, 6, 4, Color.Red), // top
+                        CubeFace(1, 3, 7, 5, Color.Green), // bottom
+                        CubeFace(4, 6, 7, 5, Color.White), // back
+                        CubeFace(0, 4, 5, 1, Color.Yellow), // Left
+                        CubeFace(2, 6, 7, 3, Color(0xFFFF9800)) // right
                     )
                 }
 
@@ -217,7 +217,7 @@ class MainActivity : ComponentActivity() {
                             // groupZ = a.z + b.z + c.z + d.z
 
                             drawPath(
-                                color = Color.Green,
+                                color = face.color,
                                 alpha = 0.3f,
                                 path = Path().apply {
                                     moveTo(normalizeWidth(a.x), normalizeHeight(a.y))
@@ -250,7 +250,13 @@ class MainActivity : ComponentActivity() {
 
 data class Coordinate(val x: Float, val y: Float)
 data class Coordinate3D(val x: Float, val y: Float, val z: Float)
-data class CubeFace(val a: Int, val b: Int, val c: Int, val d: Int)
+data class CubeFace(
+    val a: Int,
+    val b: Int,
+    val c: Int,
+    val d: Int,
+    val color: Color
+)
 
 /**
  * @param alpha Angle in degrees.
