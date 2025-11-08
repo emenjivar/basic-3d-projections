@@ -30,6 +30,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
+import com.emenjivar.threedimensionalprojections.math.MatricesOperator
+import com.emenjivar.threedimensionalprojections.math.MatricesOperator.multiply
 import com.emenjivar.threedimensionalprojections.ui.theme.ThreeDimensionalProjectionsTheme
 import kotlin.math.cos
 import kotlin.math.sin
@@ -79,34 +81,6 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                val rotationTransition = rememberInfiniteTransition(label = "rotation")
-                val xRotation = rotationTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 360f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(durationMillis = ANIMATION_TIME),
-                        repeatMode = RepeatMode.Restart
-                    )
-                )
-
-                val yRotation = rotationTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 360f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(durationMillis = ANIMATION_TIME),
-                        repeatMode = RepeatMode.Restart
-                    )
-                )
-
-                val zRotation = rotationTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 360f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(durationMillis = ANIMATION_TIME),
-                        repeatMode = RepeatMode.Restart
-                    )
-                )
-
                 var _xRotation by remember { mutableFloatStateOf(0f) }
                 var _yRotation by remember { mutableFloatStateOf(0f) }
 
@@ -134,7 +108,7 @@ class MainActivity : ComponentActivity() {
                             z = start.z,
                             alpha = _xRotation, // y-rotation
                             beta = _yRotation, // x-rotation
-                            gamma = zRotation.value * 0f // z-rotation
+                            gamma = 0f // z-rotation
                         )
 
                         val endCoordinates = project3DCoordinate(
@@ -143,7 +117,7 @@ class MainActivity : ComponentActivity() {
                             z = end.z,
                             alpha = _xRotation, // y-rotation
                             beta = _yRotation, // x-rotation
-                            gamma = zRotation.value * 0f // z-rotation
+                            gamma = 0f // z-rotation
                         )
 
                         val startOffset = Offset(
@@ -176,16 +150,47 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
+data class Coordinate(val x: Float, val y: Float)
+data class Coordinate3D(val x: Float, val y: Float, val z: Float)
+
+private val projectionMatrix = arrayOf(
+    floatArrayOf(1f, 0f, 0f),
+    floatArrayOf(0f, 1f, 0f),
+    floatArrayOf(0f, 0f, 0f),
+)
+
+/**
+ * @param angle value in radians
+ */
+private fun xRotationMatrix(angle: Float): Array<FloatArray> {
+    return arrayOf(
+        floatArrayOf(1f, 0f, 0f),
+        floatArrayOf(0f, cos(angle), -sin(angle)),
+        floatArrayOf(0f, sin(angle), cos(angle)),
     )
 }
 
-data class Coordinate(val x: Float, val y: Float)
-data class Coordinate3D(val x: Float, val y: Float, val z: Float)
+/**
+ * @param angle value in radians
+ */
+private fun yRotationMatrix(angle: Float): Array<FloatArray> {
+    return arrayOf(
+        floatArrayOf(cos(angle), 0f, sin(angle)),
+        floatArrayOf(0f, 1f, 0f),
+        floatArrayOf(-sin(angle), 0f, cos(angle)),
+    )
+}
+
+/**
+ * @param angle value in radians
+ */
+private fun zRotationMatrix(angle: Float): Array<FloatArray> {
+    return arrayOf(
+        floatArrayOf(cos(angle), -sin(angle), 0f),
+        floatArrayOf(sin(angle), cos(angle), 0f),
+        floatArrayOf(0f, 0f, 1f),
+    )
+}
 
 /**
  * @param alpha Angle in degrees.
@@ -203,10 +208,29 @@ fun project3DCoordinate(
     val alphaRad = Math.toRadians(alpha.toDouble()).toFloat()
     val betaRad = Math.toRadians(beta.toDouble()).toFloat()
     val gammaRad = Math.toRadians(gamma.toDouble()).toFloat()
-    return Coordinate(
-        x = x * cos(betaRad) * cos(gammaRad) - y * cos(betaRad) * sin(gammaRad) + z * sin(betaRad),
-        y = x * (sin(alphaRad) * sin(betaRad) * cos(gammaRad) + cos(alphaRad) * sin(gammaRad)) + y * (cos(alphaRad) * cos(gammaRad) - sin(alphaRad) * sin(gammaRad)) - z * sin(alphaRad) * cos(betaRad)
+
+    // 3D coordinate
+    val original = arrayOf(
+        floatArrayOf(x),
+        floatArrayOf(y),
+        floatArrayOf(z),
     )
+
+    val xRotated = xRotationMatrix(alphaRad) multiply original
+    val yRotated = yRotationMatrix(betaRad) multiply xRotated
+    val zRotated = zRotationMatrix(gammaRad) multiply yRotated
+
+    val projected = projectionMatrix multiply zRotated
+
+    // Assuming zRotated as 1x2 matrix
+    return Coordinate(
+        x = projected[0][0],
+        y = projected[1][0]
+    )
+//    return Coordinate(
+//        x = x * cos(betaRad) * cos(gammaRad) - y * cos(betaRad) * sin(gammaRad) + z * sin(betaRad),
+//        y = x * (sin(alphaRad) * sin(betaRad) * cos(gammaRad) + cos(alphaRad) * sin(gammaRad)) + y * (cos(alphaRad) * cos(gammaRad) - sin(alphaRad) * sin(gammaRad)) - z * sin(alphaRad) * cos(betaRad)
+//    )
 }
 
 /**
