@@ -74,3 +74,13 @@ infix fun Array<FloatArray>.multiply(
 
     return result
 }
+
+infix fun Array<FloatArray>.scale(scalar: Float): Array<FloatArray> {
+    val scaledMatrix = this.copyOf()
+    for (row in 0 until scaledMatrix.size) {
+        for (col in 0 until scaledMatrix[row].size) {
+            scaledMatrix[row][col] *= scalar
+        }
+    }
+    return scaledMatrix
+}

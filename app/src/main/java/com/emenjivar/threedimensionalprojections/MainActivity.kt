@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import com.emenjivar.threedimensionalprojections.math.multiply
 import com.emenjivar.threedimensionalprojections.math.projectionMatrix
+import com.emenjivar.threedimensionalprojections.math.scale
 import com.emenjivar.threedimensionalprojections.math.xRotationMatrix
 import com.emenjivar.threedimensionalprojections.math.yRotationMatrix
 import com.emenjivar.threedimensionalprojections.math.zRotationMatrix
@@ -98,17 +99,17 @@ class MainActivity : ComponentActivity() {
                     fraction = zDistanceSlider
                 )
 
+                var scale by remember { mutableFloatStateOf(1f) }
+
                 Box {
                     Canvas(
                         modifier = Modifier
                             .fillMaxSize()
                             .pointerInput(Unit) {
-                                detectDragGestures { change, dragAmount ->
-                                    change.consume()
-                                    val slowFactor = 0.5f
-                                    // TODO: switch the values
-                                    _yRotation += dragAmount.x * slowFactor % 360f
-                                    _xRotation += dragAmount.y * slowFactor % 360f
+                                detectTransformGestures { _, pan, gestureZoom, gestureRotate ->
+                                    scale = scale * gestureZoom
+                                    _xRotation += pan.y
+                                    _yRotation += pan.x
                                 }
                             }
                     ) {
@@ -120,7 +121,8 @@ class MainActivity : ComponentActivity() {
                                 alpha = _xRotation, // y-rotation
                                 beta = _yRotation, // x-rotation
                                 gamma = 0f, // z-rotation,
-                                zDistance = zDistance
+                                zDistance = zDistance,
+                                scalar = scale
                             )
                         }
 
@@ -244,7 +246,8 @@ fun project3DCoordinate(
     alpha: Float,
     beta: Float,
     gamma: Float,
-    zDistance: Float
+    zDistance: Float,
+    scalar: Float
 ): Coordinate {
     val alphaRad = Math.toRadians(alpha.toDouble()).toFloat()
     val betaRad = Math.toRadians(beta.toDouble()).toFloat()
@@ -257,7 +260,8 @@ fun project3DCoordinate(
         floatArrayOf(z),
     )
 
-    val xRotated = xRotationMatrix(alphaRad) multiply original
+    val scaled = original scale scalar
+    val xRotated = xRotationMatrix(alphaRad) multiply scaled
     val yRotated = yRotationMatrix(betaRad) multiply xRotated
     val zRotated = zRotationMatrix(gammaRad) multiply yRotated
 
