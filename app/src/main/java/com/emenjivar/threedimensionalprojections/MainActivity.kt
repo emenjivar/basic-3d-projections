@@ -159,7 +159,7 @@ class MainActivity : ComponentActivity() {
                                 color = Color.Black,
                                 start = startOffset,
                                 end = endOffset,
-                                strokeWidth = edgeWidth.toPx()
+                                strokeWidth = edgeWidth.toPx() * scale
                             )
                         }
 
@@ -200,6 +200,7 @@ class MainActivity : ComponentActivity() {
                             .padding(20.dp)
                             .navigationBarsPadding(),
                     ) {
+                        Text("scale: $scale")
                         Text(text = "Camera distance ($zDistance):")
                         Slider(
                             value = zDistanceSlider,
