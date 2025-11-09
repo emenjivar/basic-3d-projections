@@ -154,18 +154,6 @@ class MainActivity : ComponentActivity() {
                                 y = normalizeHeight(endCoordinates.y)
                             )
 
-                            // Draw vertex in pairs (most efficient)
-                            drawCircle(
-                                color = Color.Red,
-                                radius = 10f,
-                                center = startOffset
-                            )
-                            drawCircle(
-                                color = Color.Red,
-                                radius = 10f,
-                                center = endOffset
-                            )
-
                             // Draw vertex
                             drawLine(
                                 color = Color.Black,
