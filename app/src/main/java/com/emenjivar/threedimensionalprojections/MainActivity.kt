@@ -1,8 +1,6 @@
 package com.emenjivar.threedimensionalprojections
 
-import android.R
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -33,6 +31,8 @@ import com.emenjivar.threedimensionalprojections.math.xRotationMatrix
 import com.emenjivar.threedimensionalprojections.math.yRotationMatrix
 import com.emenjivar.threedimensionalprojections.math.zRotationMatrix
 import com.emenjivar.threedimensionalprojections.ui.theme.ThreeDimensionalProjectionsTheme
+
+private val edgeWidth = 1.dp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -164,7 +164,12 @@ class MainActivity : ComponentActivity() {
                             )
 
                             // Draw vertex
-                            drawLine(color = Color.Black, start = startOffset, end = endOffset)
+                            drawLine(
+                                color = Color.Black,
+                                start = startOffset,
+                                end = endOffset,
+                                strokeWidth = edgeWidth.toPx()
+                            )
                         }
 
                         // Draw faces (z-index is not considered for now)
