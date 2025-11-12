@@ -49,9 +49,8 @@ import com.emenjivar.threedimensionalprojections.ui.theme.ThreeDimensionalProjec
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-private val edgeWidth = 1.dp
 private val DeepStartColor = Color(0xffc20e0e)
-private val DeepEndColor = Color(0xfffa9c50)
+private val DeepEndColor = Color(0xffffe96e)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

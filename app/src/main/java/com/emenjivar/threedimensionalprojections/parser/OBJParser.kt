@@ -50,21 +50,25 @@ private fun mapVertexes(objContent: String): List<Coordinate3D> {
             arrayOf(x,y,z)
         }
 
-    val rangeX = maxY - minX
+    // User for normalize the coordinates
+    val rangeX = maxX - minX
     val rangeY = maxY - minY
     val rangeZ = maxZ - minZ
     val maxRange = maxOf(rangeX, maxOf(rangeY, rangeZ))
+    val scale = if (maxRange != 0f) maxRange else 1f // Prevent division by zero
 
-    // Prevent division by zero
-    val scale = if (maxRange != 0f) maxRange else 1f
+    // Center the shape at the origin of the 3D space
+    val centerX = (minX + maxX) / 2f
+    val centerY = (minY + maxY) / 2f
+    val centerZ = (minZ + maxZ) / 2f
 
     return vertexes.map { points ->
-            Coordinate3D(
-                x = (points[0] - minX) / scale,
-                y = (points[1] - minY) / scale,
-                z = (points[2] - minZ) / scale
-            )
-        }
+        Coordinate3D(
+            x = (points[0] - centerX) / scale,
+            y = (points[1] - centerY) / scale,
+            z = (points[2] - centerZ) / scale
+        )
+    }
 }
 
 // Faces lines contains the points that borders the face.
