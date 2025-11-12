@@ -7,6 +7,11 @@ import com.emenjivar.threedimensionalprojections.shapes.CustomShape
 import com.emenjivar.threedimensionalprojections.shapes.Face
 import kotlin.math.min
 
+/**
+ * Extract vertexes and faces from an `.obj` object.
+ *
+ * @param objContent The content of the obj file/
+ */
 fun convertToShape(objContent: String): CustomShape {
     val vertexes = mapVertexes(objContent)
 

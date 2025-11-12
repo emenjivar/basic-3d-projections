@@ -1,5 +1,6 @@
 package com.emenjivar.threedimensionalprojections.math
 
+import com.emenjivar.threedimensionalprojections.shapes.Coordinate2D
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -83,4 +84,51 @@ infix fun Array<FloatArray>.scale(scalar: Float): Array<FloatArray> {
         }
     }
     return scaledMatrix
+}
+
+/**
+ * @param alpha Angle in degrees.
+ * @param beta Angle in degrees.
+ * @param gamma Angle in degrees
+ */
+fun project3DCoordinate(
+    x: Float,
+    y: Float,
+    z: Float,
+    alpha: Float,
+    beta: Float,
+    gamma: Float,
+    zDistance: Float,
+    scalar: Float
+): Coordinate2D {
+    val alphaRad = Math.toRadians(alpha.toDouble()).toFloat()
+    val betaRad = Math.toRadians(beta.toDouble()).toFloat()
+    val gammaRad = Math.toRadians(gamma.toDouble()).toFloat()
+
+    // 3D coordinate
+    val original = arrayOf(
+        floatArrayOf(x),
+        floatArrayOf(y),
+        floatArrayOf(z),
+    )
+
+    val scaled = original scale scalar
+    val xRotated = xRotationMatrix(alphaRad) multiply scaled
+    val yRotated = yRotationMatrix(betaRad) multiply xRotated
+    val zRotated = zRotationMatrix(gammaRad) multiply yRotated
+
+    // Apply perspective projection
+    val w = 1f / (zDistance - zRotated[2][0]) // perspective divide factor
+
+    val projected = projectionMatrix multiply zRotated
+
+    // Assuming zRotated as 1x2 matrix
+    return Coordinate2D(
+        x = projected[0][0] * w,
+        y = projected[1][0] * w
+    )
+//    return Coordinate(
+//        x = x * cos(betaRad) * cos(gammaRad) - y * cos(betaRad) * sin(gammaRad) + z * sin(betaRad),
+//        y = x * (sin(alphaRad) * sin(betaRad) * cos(gammaRad) + cos(alphaRad) * sin(gammaRad)) + y * (cos(alphaRad) * cos(gammaRad) - sin(alphaRad) * sin(gammaRad)) - z * sin(alphaRad) * cos(betaRad)
+//    )
 }
