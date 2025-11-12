@@ -43,12 +43,15 @@ import com.emenjivar.threedimensionalprojections.math.zRotationMatrix
 import com.emenjivar.threedimensionalprojections.parser.convertToShape
 import com.emenjivar.threedimensionalprojections.shapes.Coordinate2D
 import com.emenjivar.threedimensionalprojections.shapes.Cube
+import com.emenjivar.threedimensionalprojections.shapes.CustomShape
 import com.emenjivar.threedimensionalprojections.shapes.Shape
 import com.emenjivar.threedimensionalprojections.ui.theme.ThreeDimensionalProjectionsTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 private val edgeWidth = 1.dp
+private val DeepStartColor = Color(0xffc20e0e)
+private val DeepEndColor = Color(0xfffa9c50)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -154,14 +157,25 @@ class MainActivity : ComponentActivity() {
 
                             averageZ to face
                         }.sortedBy { it.first }
-                            .forEach { (_, face) ->
+                            .forEach { (averageZ, face) ->
+                                // Assuming normalized coordinates for averageZ
+                                val color = if (shape is CustomShape) {
+                                    androidx.compose.ui.graphics.lerp(
+                                        start = DeepStartColor,
+                                        stop = DeepEndColor,
+                                        fraction = averageZ.toFloat()
+                                    )
+                                } else {
+                                    face.color
+                                }
+
                                 val points = face.indexes.map { index ->
                                     val v = projectedCoordinates[index]
                                     Coordinate2D(x = normalizeWidth(v.x), y = normalizeHeight(v.y))
                                 }
 
                                 drawPath(
-                                    color = face.color,
+                                    color = color,
                                     alpha = 1f,
                                     path = Path().apply {
                                         moveTo(points[0].x, points[0].y)

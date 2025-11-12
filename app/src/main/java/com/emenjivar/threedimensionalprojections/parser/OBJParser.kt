@@ -1,15 +1,18 @@
 package com.emenjivar.threedimensionalprojections.parser
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import com.emenjivar.threedimensionalprojections.shapes.Coordinate3D
 import com.emenjivar.threedimensionalprojections.shapes.CustomShape
 import com.emenjivar.threedimensionalprojections.shapes.Face
 import kotlin.math.min
 
 fun convertToShape(objContent: String): CustomShape {
+    val vertexes = mapVertexes(objContent)
+
     return CustomShape(
-        vertexes = mapVertexes(objContent),
-        faces = mapFaces(objContent),
+        vertexes = vertexes,
+        faces = mapFaces(objContent, vertexes),
         edges = emptyList()
     )
 }
@@ -68,7 +71,10 @@ private fun mapVertexes(objContent: String): List<Coordinate3D> {
 // we only care about the first value (vertex index), the other twe values (separated by /)
 // are not used on this example.
 // e.g. `f 175/111/30 190/104/30 209/115/30`
-private fun mapFaces(objContent: String): List<Face> {
+private fun mapFaces(
+    objContent: String,
+    vertexes: List<Coordinate3D> // Assuming a list of normalized coordinates
+): List<Face> {
 
     val faces = objContent.lines()
         .filter { it.startsWith("f ") }
@@ -79,7 +85,13 @@ private fun mapFaces(objContent: String): List<Face> {
                     // but my shape definitions keeps index-0 for simplicity
                     vertex.split("/")[0].toInt() - 1
                 }
-            Face(indexes = indices, color = Color.Blue)
+            // Add depth to the faces
+            val averageZ = indices.map { index -> vertexes[index].z }.average().toFloat()
+
+            Face(
+                indexes = indices,
+                color = lerp(start = Color.Blue, stop = Color.Red, fraction = averageZ)
+            )
         }
 
     return faces
