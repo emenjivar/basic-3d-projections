@@ -179,10 +179,11 @@ class MainActivity : ComponentActivity() {
                             .navigationBarsPadding(),
                     ) {
                         Text("Scale: $scale")
+                        Text("Faces: ${shape.faces.size}")
                         Row(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Render vertexes: ")
+                            Text("Show vertexes (${shape.vertexes.size}): ")
                             Checkbox(
                                 checked = renderVertexes,
                                 onCheckedChange = { renderVertexes = it }
