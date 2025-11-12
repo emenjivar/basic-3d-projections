@@ -35,20 +35,20 @@ class Cube : Shape() {
 
     override val edges: List<Edge>
         get() = listOf(
-            // Front edges
-            Edge(start = 0, end = 1), // top-left to bottom-left
-            Edge(start = 1, end = 3), // bottom-left to bottom-right
-            Edge(start = 3, end = 2), // bottom-right to top-right
-            Edge(start = 2, end = 0), // top-right to top-left
-            // Back edges
-            Edge(start = 4, end = 5), // top-left to bottom-left
-            Edge(start = 4, end = 6), // top-left to top-right
-            Edge(start = 5, end = 7), // bottom-left to bottom-right
-            Edge(start = 7, end = 6),
-            // Union edges
-            Edge(start = 0, end = 4),
-            Edge(start = 1, end = 5),
-            Edge(start = 2, end = 6),
-            Edge(start = 3, end = 7),
+//            // Front edges
+//            Edge(start = 0, end = 1), // top-left to bottom-left
+//            Edge(start = 1, end = 3), // bottom-left to bottom-right
+//            Edge(start = 3, end = 2), // bottom-right to top-right
+//            Edge(start = 2, end = 0), // top-right to top-left
+//            // Back edges
+//            Edge(start = 4, end = 5), // top-left to bottom-left
+//            Edge(start = 4, end = 6), // top-left to top-right
+//            Edge(start = 5, end = 7), // bottom-left to bottom-right
+//            Edge(start = 7, end = 6),
+//            // Union edges
+//            Edge(start = 0, end = 4),
+//            Edge(start = 1, end = 5),
+//            Edge(start = 2, end = 6),
+//            Edge(start = 3, end = 7),
         )
 }

@@ -1,9 +1,12 @@
 package com.emenjivar.threedimensionalprojections
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
@@ -12,13 +15,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import com.emenjivar.threedimensionalprojections.math.multiply
@@ -35,10 +40,13 @@ import com.emenjivar.threedimensionalprojections.math.scale
 import com.emenjivar.threedimensionalprojections.math.xRotationMatrix
 import com.emenjivar.threedimensionalprojections.math.yRotationMatrix
 import com.emenjivar.threedimensionalprojections.math.zRotationMatrix
+import com.emenjivar.threedimensionalprojections.parser.convertToShape
 import com.emenjivar.threedimensionalprojections.shapes.Coordinate2D
 import com.emenjivar.threedimensionalprojections.shapes.Cube
-import com.emenjivar.threedimensionalprojections.shapes.Tetrahedron
+import com.emenjivar.threedimensionalprojections.shapes.Shape
 import com.emenjivar.threedimensionalprojections.ui.theme.ThreeDimensionalProjectionsTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 private val edgeWidth = 1.dp
 
@@ -47,13 +55,30 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-
         setContent {
             ThreeDimensionalProjectionsTheme {
-                val shape = remember {
-                     Cube()
-//                    Tetrahedron()
+                val context = LocalContext.current
+                val coroutineScope = rememberCoroutineScope()
+
+                var shape by remember { mutableStateOf<Shape>(Cube()) }
+
+                // File picker launcher
+                val filePickerLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.GetContent()
+                ) { uri: Uri? ->
+                    uri?.let {
+                        coroutineScope.launch(Dispatchers.IO) {
+                            val result = context.contentResolver.openInputStream(it)
+                                ?.bufferedReader()
+                                ?.readText()
+
+                            shape = convertToShape(result.orEmpty())
+
+                        }
+                    }
                 }
+
+
                 var _xRotation by remember { mutableFloatStateOf(0f) }
                 var _yRotation by remember { mutableFloatStateOf(0f) }
                 var zDistanceSlider by remember { mutableFloatStateOf(0.5f) }
@@ -106,34 +131,22 @@ class MainActivity : ComponentActivity() {
                             yRotation[2][0] // z-coordinate
                         }
 
-                        shape.edges.forEach { edge ->
-                            val startCoordinates = projectedCoordinates[edge.start]
-                            val endCoordinates = projectedCoordinates[edge.end]
+                        if (renderVertexes) {
+                            projectedCoordinates.forEach { coordinate ->
+                                val normalizedCoordinate = Offset(
+                                    x = normalizeWidth(coordinate.x),
+                                    y = normalizeHeight(coordinate.y)
+                                )
 
-                            val startOffset = Offset(
-                                x = normalizeWidth(startCoordinates.x),
-                                y = normalizeHeight(startCoordinates.y)
-                            )
-                            val endOffset = Offset(
-                                x = normalizeWidth(endCoordinates.x),
-                                y = normalizeHeight(endCoordinates.y)
-                            )
-
-                            if (renderVertexes) {
-                                drawCircle(color = Color.Red, center = startOffset, radius = 5.dp.toPx() * scale)
-                                drawCircle(color = Color.Red, center = endOffset, radius = 5.dp.toPx() * scale)
+                                drawCircle(
+                                    color = Color.Red,
+                                    center = normalizedCoordinate,
+                                    radius = 5.dp.toPx() * scale
+                                )
                             }
-
-                            // Draw vertex
-                            drawLine(
-                                color = Color.Black,
-                                start = startOffset,
-                                end = endOffset,
-                                strokeWidth = edgeWidth.toPx() * scale
-                            )
                         }
 
-                        // Draw faces (z-index is not considered for now)
+                        // Draw faces
                         shape.faces.map { face ->
                             val averageZ = face.indexes.map { index ->
                                 zRotatedCoordinates[index]
@@ -161,7 +174,7 @@ class MainActivity : ComponentActivity() {
 
                     Column(
                         modifier = Modifier
-                            .align(Alignment.BottomCenter)
+                            .align(Alignment.BottomStart)
                             .padding(20.dp)
                             .navigationBarsPadding(),
                     ) {
@@ -175,11 +188,13 @@ class MainActivity : ComponentActivity() {
                                 onCheckedChange = { renderVertexes = it }
                             )
                         }
-                        Text(text = "Camera distance ($zDistance):")
-                        Slider(
-                            value = zDistanceSlider,
-                            onValueChange = { zDistanceSlider = it }
-                        )
+                        Button(
+                            onClick = {
+                                filePickerLauncher.launch("*/*")
+                            }
+                        ) {
+                            Text("Select OBJ file")
+                        }
                     }
                 }
             }
