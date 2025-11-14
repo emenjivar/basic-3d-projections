@@ -35,11 +35,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.emenjivar.threedimensionalprojections.parser.convertToShape
-import com.emenjivar.threedimensionalprojections.shapes.Cube
+import com.emenjivar.threedimensionalprojections.shapes.CubeInstance
 import com.emenjivar.threedimensionalprojections.shapes.Shape
-import com.emenjivar.threedimensionalprojections.shapes.ShrekAbstract
-import com.emenjivar.threedimensionalprojections.shapes.Teapot
-import com.emenjivar.threedimensionalprojections.shapes.Tetrahedron
+import com.emenjivar.threedimensionalprojections.shapes.TetrahedronInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -160,8 +158,8 @@ private fun getFileName(context: Context, uri: Uri): String? {
 @Composable
 private fun ShapePickerLayoutPreview() {
     ShapePickerLayout(
-        selectedShape = Cube(),
-        availableLocalShapes = listOf(Cube(), Tetrahedron(), Teapot(), ShrekAbstract()),
+        selectedShape = CubeInstance,
+        availableLocalShapes = listOf(CubeInstance, TetrahedronInstance),
         onPickShape = {},
     )
 }

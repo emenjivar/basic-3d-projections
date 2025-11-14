@@ -38,8 +38,6 @@ import com.emenjivar.threedimensionalprojections.shapes.CubeInstance
 import com.emenjivar.threedimensionalprojections.shapes.CustomShape
 import com.emenjivar.threedimensionalprojections.shapes.RubikCubeInstance
 import com.emenjivar.threedimensionalprojections.shapes.Shape
-import com.emenjivar.threedimensionalprojections.shapes.ShrekInstance
-import com.emenjivar.threedimensionalprojections.shapes.TeapotInstance
 import com.emenjivar.threedimensionalprojections.shapes.TetrahedronInstance
 import kotlinx.coroutines.launch
 
@@ -54,7 +52,7 @@ fun MainScreen() {
     val coroutineScope = rememberCoroutineScope()
     var shape by remember { mutableStateOf<Shape>(CubeInstance) }
     val availableShapes = remember {
-        listOf(CubeInstance, TetrahedronInstance, RubikCubeInstance, TeapotInstance, ShrekInstance)
+        listOf(CubeInstance, TetrahedronInstance, RubikCubeInstance)
     }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var xRotation by remember { mutableFloatStateOf(0f) }
