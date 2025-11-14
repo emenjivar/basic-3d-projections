@@ -1,5 +1,6 @@
 package com.emenjivar.threedimensionalprojections.parser
 
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import com.emenjivar.threedimensionalprojections.shapes.Coordinate3D
@@ -41,7 +42,9 @@ private fun mapVertexes(objContent: String): List<Coordinate3D> {
     val vertexes = objContent.lines()
         .filter { it.startsWith("v ") }
         .map { vertexLine ->
-            val split = vertexLine.split(" ").drop(1)
+            // Split by one or more whitespaces
+            val split = vertexLine.trim().split("\\s+".toRegex()).drop(1)
+
             val x = split[0].trim().toFloat()
             val y = split[1].trim().toFloat()
             val z = split[2].trim().toFloat()
