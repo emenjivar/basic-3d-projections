@@ -27,6 +27,10 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,6 +83,7 @@ fun ShapePickerLayout(
     availableLocalShapes: List<Shape>,
     onPickShape: (Shape) -> Unit
 ) {
+    var loading by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -88,6 +93,7 @@ fun ShapePickerLayout(
     ) { uri: Uri? ->
         uri?.let {
             coroutineScope.launch(Dispatchers.IO) {
+                loading = true
                 val result = context.contentResolver.openInputStream(it)
                     ?.bufferedReader()
                     ?.readText()
@@ -96,6 +102,7 @@ fun ShapePickerLayout(
                     name = fileName.orEmpty(),
                     objContent = result.orEmpty()
                 )
+                loading = false
                 onPickShape(pickedShape)
             }
         }
@@ -136,6 +143,7 @@ fun ShapePickerLayout(
             Spacer(modifier = Modifier.height(10.dp))
 
             Button(
+                enabled = !loading,
                 onClick = {
                     filePickerLauncher.launch("*/*")
                 }
