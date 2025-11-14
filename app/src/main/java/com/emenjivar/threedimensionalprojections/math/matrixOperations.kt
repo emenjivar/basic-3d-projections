@@ -98,7 +98,6 @@ fun project3DCoordinate(
     alpha: Float,
     beta: Float,
     gamma: Float,
-    zDistance: Float,
     scalar: Float
 ): Coordinate2D {
     val alphaRad = Math.toRadians(alpha.toDouble()).toFloat()
@@ -118,7 +117,7 @@ fun project3DCoordinate(
     val zRotated = zRotationMatrix(gammaRad) multiply yRotated
 
     // Apply perspective projection
-    val w = 1f / (zDistance - zRotated[2][0]) // perspective divide factor
+    val w = 1f / (2f - zRotated[2][0]) // perspective divide factor
 
     val projected = projectionMatrix multiply zRotated
 

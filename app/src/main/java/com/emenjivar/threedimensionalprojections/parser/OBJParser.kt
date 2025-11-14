@@ -12,13 +12,16 @@ import kotlin.math.min
  *
  * @param objContent The content of the obj file/
  */
-fun convertToShape(objContent: String): CustomShape {
+fun convertToShape(
+    name: String,
+    objContent: String
+): CustomShape {
     val vertexes = mapVertexes(objContent)
 
     return CustomShape(
+        name = name,
         vertexes = vertexes,
-        faces = mapFaces(objContent, vertexes),
-        edges = emptyList()
+        faces = mapFaces(objContent, vertexes)
     )
 }
 

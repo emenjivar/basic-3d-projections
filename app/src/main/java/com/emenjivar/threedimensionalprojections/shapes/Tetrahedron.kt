@@ -6,6 +6,9 @@ import kotlin.math.sin
 
 class Tetrahedron: Shape() {
 
+    override val name: String
+        get() = "Tetrahedron"
+
     private val l = 1f // Length of the sides of the triangle
     private val r = (l * sin(Math.toRadians(30.0)) / sin(Math.toRadians(120.0))).toFloat()
 
@@ -39,13 +42,6 @@ class Tetrahedron: Shape() {
 //        Face(indexes = listOf(1, 3, 2), color = Color.Green),
         Face(indexes = listOf(0, 2, 1), color = Color.Yellow),
     )
-
-    override val edges: List<Edge> = listOf(
-        Edge(start = 0, end = 1),
-        Edge(start = 1, end = 2),
-//        Edge(start = 2, end = 3),
-//        Edge(start = 3, end = 1),
-        Edge(start = 2, end = 0),
-//        Edge(start = 3, end = 0)
-    )
 }
+
+val TetrahedronInstance = Tetrahedron()

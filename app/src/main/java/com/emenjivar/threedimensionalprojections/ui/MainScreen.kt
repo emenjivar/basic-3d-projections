@@ -1,9 +1,7 @@
 package com.emenjivar.threedimensionalprojections.ui
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +11,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -28,62 +28,43 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.lerp
 import com.emenjivar.threedimensionalprojections.math.multiply
 import com.emenjivar.threedimensionalprojections.math.project3DCoordinate
 import com.emenjivar.threedimensionalprojections.math.xRotationMatrix
 import com.emenjivar.threedimensionalprojections.math.yRotationMatrix
-import com.emenjivar.threedimensionalprojections.parser.convertToShape
 import com.emenjivar.threedimensionalprojections.shapes.Coordinate2D
-import com.emenjivar.threedimensionalprojections.shapes.Cube
+import com.emenjivar.threedimensionalprojections.shapes.CubeInstance
 import com.emenjivar.threedimensionalprojections.shapes.CustomShape
+import com.emenjivar.threedimensionalprojections.shapes.RubikCubeInstance
 import com.emenjivar.threedimensionalprojections.shapes.Shape
-import kotlinx.coroutines.Dispatchers
+import com.emenjivar.threedimensionalprojections.shapes.ShrekInstance
+import com.emenjivar.threedimensionalprojections.shapes.TeapotInstance
+import com.emenjivar.threedimensionalprojections.shapes.TetrahedronInstance
 import kotlinx.coroutines.launch
 
 private val DeepStartColor = Color(0xffc20e0e)
 private val DeepEndColor = Color(0xffffe96e)
 private const val ROTATION_SPEED = 0.5f
+private val BackgroundColor = Color(0xffe7e7e7)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
-    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-
-    var shape by remember { mutableStateOf<Shape>(Cube()) }
-
-    // File picker launcher
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            coroutineScope.launch(Dispatchers.IO) {
-                val result = context.contentResolver.openInputStream(it)
-                    ?.bufferedReader()
-                    ?.readText()
-
-                shape = convertToShape(result.orEmpty())
-
-            }
-        }
+    var shape by remember { mutableStateOf<Shape>(CubeInstance) }
+    val availableShapes = remember {
+        listOf(CubeInstance, TetrahedronInstance, RubikCubeInstance, TeapotInstance, ShrekInstance)
     }
-
-
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var xRotation by remember { mutableFloatStateOf(0f) }
     var yRotation by remember { mutableFloatStateOf(0f) }
-    var zDistanceSlider by remember { mutableFloatStateOf(0.5f) }
-    val zDistance = lerp(
-        start = 1f,
-        stop = 5f,
-        fraction = zDistanceSlider
-    )
-
     var scale by remember { mutableFloatStateOf(1f) }
     var renderVertexes by remember { mutableStateOf(false) }
 
-    Box {
+    Box(
+        modifier = Modifier.fillMaxSize().background(BackgroundColor)
+    ) {
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
@@ -103,7 +84,6 @@ fun MainScreen() {
                     alpha = xRotation, // y-rotation
                     beta = yRotation, // x-rotation
                     gamma = 0f, // z-rotation,
-                    zDistance = zDistance,
                     scalar = scale
                 )
             }
@@ -181,6 +161,7 @@ fun MainScreen() {
                 .padding(20.dp)
                 .navigationBarsPadding(),
         ) {
+            Text(text = "Shape name: ${shape.name}")
             Text("Scale: $scale")
             Text("Faces: ${shape.faces.size}")
             Row(
@@ -192,15 +173,27 @@ fun MainScreen() {
                     onCheckedChange = { renderVertexes = it }
                 )
             }
+
             Button(
                 onClick = {
-                    filePickerLauncher.launch("*/*")
+                    coroutineScope.launch {
+                        sheetState.expand()
+                    }
                 }
             ) {
-                Text("Select OBJ file")
+                Text(text = "Pick a shape")
             }
         }
     }
+
+    ShapePickerBottomSheet(
+        sheetState = sheetState,
+        selectedShape = shape,
+        availableLocalShapes = availableShapes,
+        onPickLocalShape = { selectedShape ->
+            shape = selectedShape
+        }
+    )
 }
 
 /**
